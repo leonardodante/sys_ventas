@@ -14,6 +14,7 @@ namespace Sales_and_Inventory_System__Gadgets_Shop_
 {
     public partial class frmInvoice : Form
     {
+        Invoice invoice;
         OleDbCommand cmd;
         OleDbConnection con;
         OleDbDataReader rdr;
@@ -632,50 +633,70 @@ namespace Sales_and_Inventory_System__Gadgets_Shop_
         {
 
             //MessageBox.Show(ListView1.Items[1].SubItems[5].Text, "contenido");
-            
+            invoice = new Invoice();
             con = new OleDbConnection(cs);
             con.Open();
-            String sql = "UPDATE Stock SET Quantity = Quantity -" + int.Parse(ListView1.Items[1].SubItems[4].Text) + " where StockID = " +  int.Parse(ListView1.Items[1].SubItems[1].Text);
-            cmd = new OleDbCommand(sql, con);
-            cmd.ExecuteNonQuery();
-            
-            for (int i = 1; 0 < ListView1.Items.Count; i++)
+            for (int i = 0; i < ListView1.Items.Count; i++)
             {
 
 
-                ListView1.Items.RemoveAt(ListView1.Items.Count - 1);
+                String sql = "UPDATE Stock SET Quantity = Quantity -" + int.Parse(ListView1.Items[i].SubItems[4].Text) + " where StockID = " + int.Parse(ListView1.Items[i].SubItems[1].Text);
+                cmd = new OleDbCommand(sql, con);
+                cmd.ExecuteNonQuery();
             }
-            try
+            for (int i = 0; i<ListView1.Items.Count; i++)
             {
-                
-                Cursor = Cursors.WaitCursor;
-                timer1.Enabled = true;
-                
-                rptInvoice rpt = new rptInvoice();
-                //The report you created.
-                cmd = new OleDbCommand();
-                OleDbDataAdapter myDA = new OleDbDataAdapter();
-                DataSet myDS = new DataSet();
-                //The DataSet you created.
-                con = new OleDbConnection(cs);
-                cmd.Connection = con;
-                cmd.CommandText = "SELECT Config.ConfigID, Config.ProductName, Config.Features, Config.Price, Sales.InvoiceNo, Sales.InvoiceDate, Sales.CustomerID, Sales.SubTotal,Sales.VATPercentage, Sales.VATAmount, Sales.GrandTotal, Sales.TotalPayment, Sales.PaymentDue, Sales.Remarks, ProductSold.ID,ProductSold.InvoiceNo AS Expr1, ProductSold.ConfigID AS Expr2, ProductSold.Quantity, ProductSold.Price AS Expr3, ProductSold.TotalAmount,Customer.CustomerID AS Expr4, Customer.CustomerName, Customer.Address, Customer.Landmark, Customer.City, Customer.State, Customer.ZipCode,Customer.Phone, Customer.MobileNo, Customer.FaxNo, Customer.Email, Customer.Notes FROM (((Customer INNER JOIN Sales ON Customer.CustomerID = Sales.CustomerID) INNER JOIN ProductSold ON Sales.InvoiceNo = ProductSold.InvoiceNo) INNER JOIN Config ON ProductSold.ConfigID = Config.ConfigID) where Sales.invoiceNo='" + label17.Text + "'";
-                cmd.CommandType = CommandType.Text;
-                myDA.SelectCommand = cmd;
-                myDA.Fill(myDS, "Config");
-                myDA.Fill(myDS, "Sales");
-                myDA.Fill(myDS, "ProductSold");
-                myDA.Fill(myDS, "Customer");
-                rpt.SetDataSource(myDS);
-                frmInvoiceReport frm = new frmInvoiceReport();
-                frm.crystalReportViewer1.ReportSource = rpt;
-                frm.crystalReportViewer1.PrintReport();
-                //frm.Visible=true;
+                invoice.Details.Add(
+                    new InvoiceDetail
+                    {
+                        ProductCode = ListView1.Items[i].SubItems[2].Text,
+                        UnitPrice = ListView1.Items[i].SubItems[3].Text,
+                        Qty =ListView1.Items[i].SubItems[4].Text,
+                        LineTotal = ListView1.Items[i].SubItems[5].Text
+
+                }) ;
+
+                //ListView1.Items.RemoveAt(ListView1.Items.Count - 1);
             }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
+            invoice.InvoiceTotal = txtSubTotal.Text;
+            invoice.DateCreated = DateTime.Today;
+
+            using (frmInvoicePrint frm = new frmInvoicePrint(invoice))
+			{
+                frm.ShowDialog();
+			}
+
+                try
+                {
+
+                    Cursor = Cursors.WaitCursor;
+                    timer1.Enabled = true;
+
+                    rptInvoice rpt = new rptInvoice();
+                    //The report you created.
+                    cmd = new OleDbCommand();
+                    OleDbDataAdapter myDA = new OleDbDataAdapter();
+                    DataSet myDS = new DataSet();
+                    //The DataSet you created.
+                    con = new OleDbConnection(cs);
+                    cmd.Connection = con;
+                    cmd.CommandText = "SELECT Config.ConfigID, Config.ProductName, Config.Features, Config.Price, Sales.InvoiceNo, Sales.InvoiceDate, Sales.CustomerID, Sales.SubTotal,Sales.VATPercentage, Sales.VATAmount, Sales.GrandTotal, Sales.TotalPayment, Sales.PaymentDue, Sales.Remarks, ProductSold.ID,ProductSold.InvoiceNo AS Expr1, ProductSold.ConfigID AS Expr2, ProductSold.Quantity, ProductSold.Price AS Expr3, ProductSold.TotalAmount,Customer.CustomerID AS Expr4, Customer.CustomerName, Customer.Address, Customer.Landmark, Customer.City, Customer.State, Customer.ZipCode,Customer.Phone, Customer.MobileNo, Customer.FaxNo, Customer.Email, Customer.Notes FROM (((Customer INNER JOIN Sales ON Customer.CustomerID = Sales.CustomerID) INNER JOIN ProductSold ON Sales.InvoiceNo = ProductSold.InvoiceNo) INNER JOIN Config ON ProductSold.ConfigID = Config.ConfigID) where Sales.invoiceNo='" + label17.Text + "'";
+                    cmd.CommandType = CommandType.Text;
+                    //myDA.SelectCommand = cmd;
+                    //myDA.Fill(myDS, "Config");
+                    //myDA.Fill(myDS, "Sales");
+                    //myDA.Fill(myDS, "ProductSold");
+                    //myDA.Fill(myDS, "Customer");
+                    //rpt.SetDataSource(myDS);
+                    //frmInvoiceReport frm = new frmInvoiceReport();
+                    //frm.crystalReportViewer1.ReportSource = rpt;
+                    //frm.crystalReportViewer1.PrintReport();
+                    //frm.Visible=true;
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
         }
 
         private void timer1_Tick(object sender, EventArgs e)
